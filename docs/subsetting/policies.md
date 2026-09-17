@@ -110,5 +110,5 @@ and compare your application's text at its actual display sizes. Include all
 required accents and characters. Matching outlines and positioning do not
 guarantee matching pixels on every renderer. Recursive has a documented CoreText
 dependency on glyph names and additional glyphs; its
-[technical diagnosis](../../tests/Validation/RECURSIVE_RENDERING.md) and narrow
+[technical diagnosis](https://github.com/altophp/font/blob/main/tests/Validation/RECURSIVE_RENDERING.md) and narrow
 workaround do not establish rendering fidelity for other fonts.

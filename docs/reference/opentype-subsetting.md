@@ -83,5 +83,5 @@ pixels. In the Recursive/CoreText validation sample, removing `post` glyph
 names changes small-size rendering even when all other font data is retained.
 Removing glyphs used by that renderer can also affect retained glyphs.
 
-The [Recursive rendering diagnosis](../../tests/Validation/RECURSIVE_RENDERING.md)
+The [Recursive rendering diagnosis](https://github.com/altophp/font/blob/main/tests/Validation/RECURSIVE_RENDERING.md)
 contains the reproducible CoreText evidence and the limits of its workaround.
