@@ -1,78 +1,92 @@
-# Compress WOFF2 output
+# Write a WOFF2 file
 
-WOFF2 writing requires an explicit Brotli compressor. This keeps extension and
-process choices outside the writer API.
+Choose a Brotli compressor for writing. Reading WOFF2 detects the PHP Brotli
+extension or executable automatically; writing uses the adapter you provide.
 
-Reading is different: the loader automatically tries the Brotli extension and
-then the `brotli` executable.
+## With the PHP Brotli extension
 
-## Use the Brotli extension
+Use this when the PHP runtime running your script provides `brotli_compress()`
+and `BROTLI_FONT`. Create `output` first and use a new destination filename.
 
 ```php
-use Alto\Font\Compression\BrotliCompressionProfile;
+<?php
+
+require __DIR__.'/vendor/autoload.php';
+
 use Alto\Font\Compression\BrotliExtensionCompressor;
+use Alto\Font\Font;
 use Alto\Font\Writer\Woff2Writer;
 
-$brotli = new BrotliExtensionCompressor(
-    BrotliCompressionProfile::Maximum,
-);
+$font = Font::fromFile(__DIR__.'/fonts/Inter-Regular.ttf');
+$destination = __DIR__.'/output/inter.woff2';
 
-new Woff2Writer($brotli)->write(
-    $font,
-    __DIR__.'/output/font.woff2',
-);
+new Woff2Writer(new BrotliExtensionCompressor())->write($font, $destination);
+
+printf("Saved inter.woff2 (%d bytes)\n", filesize($destination));
 ```
 
-The extension must expose `brotli_compress()` and `BROTLI_FONT`. `Maximum` uses
-quality 11 and is the default. `Fast` uses quality 5 for faster iterative
-builds.
+This writes `output/inter.woff2` and prints its actual byte size.
+To write a subset, pass `$result->font` from the [subset workflow](../subsetting/index.md)
+to the same writer.
 
-## Use the Brotli executable
+## With the Brotli executable
+
+Use this as a separate script if `brotli` is on the process `PATH`:
 
 ```php
-use Alto\Font\Compression\BrotliCompressionProfile;
+<?php
+
+require __DIR__.'/vendor/autoload.php';
+
 use Alto\Font\Compression\BrotliProcessCompressor;
+use Alto\Font\Font;
 use Alto\Font\Writer\Woff2Writer;
 
-$brotli = new BrotliProcessCompressor(
-    profile: BrotliCompressionProfile::Fast,
-);
+$font = Font::fromFile(__DIR__.'/fonts/Inter-Regular.ttf');
+$destination = __DIR__.'/output/inter.woff2';
 
-new Woff2Writer($brotli)->write(
-    $font,
-    __DIR__.'/output/font.woff2',
-);
+new Woff2Writer(new BrotliProcessCompressor())->write($font, $destination);
+
+printf("Saved inter.woff2 (%d bytes)\n", filesize($destination));
 ```
 
-The binary defaults to `brotli` from `PATH`; the profile defaults to
-`Maximum`. Pass `binary: '/opt/homebrew/bin/brotli'` when a macOS installation
-is not available through `PATH`.
-
+Set `binary: '/path/to/brotli'` in the compressor constructor if needed.
 The process adapter requires `proc_open()`, a writable temporary directory,
-and enough temporary disk space for the transformed and compressed streams.
+and enough temporary disk space. Missing dependencies and compression failures
+raise `CompressionException`; see [runtime requirements](#check-the-runtime).
 
-## Choose `dump()` or `write()`
+## Choose compression speed
 
-`dump()` returns the complete WOFF2 file as one string. `write()` with
-`BrotliProcessCompressor` streams data at the compression boundary through
-temporary resources. The parsed font document and WOFF2 table transforms still
-exist in memory, so this is not a constant-memory promise for the complete
-operation.
+Both adapters default to `BrotliCompressionProfile::Maximum` (quality 11).
+For faster iterative builds, pass `profile: BrotliCompressionProfile::Fast`
+(quality 5). Import `Alto\Font\Compression\BrotliCompressionProfile` when using
+these constants. Compare the resulting sizes for your own fonts.
 
-The extension adapter implements string compression only. Its `write()` path
-therefore materializes the same compressed data used by `dump()`.
+## Files, bytes, and memory
 
-## Implement a custom compressor
+Use `write()` for a new file or `dump()` to obtain a complete WOFF2 string for
+a storage API. Existing files are never replaced.
 
-Implement `BrotliCompressorInterface::compress()` to return one raw Brotli
-stream for the supplied WOFF2 table data. Do not add a WOFF2 header, length
-prefix, or padding.
+With the process adapter, `write()` streams at the compression boundary using
+temporary resources. The parsed font and transforms still occupy memory.
+The extension adapter materializes the compressed data for both methods.
+Neither promises constant memory for the whole operation.
 
-An implementation may also implement `BrotliStreamCompressorInterface`.
-`compressStream()` reads from the input's current position through EOF, writes
-at the output's current position, leaves both resources open, and does not
-rewind them.
+## Custom compressors
 
-Missing extension support, unavailable temporary resources, an unavailable
-executable, non-zero process exits, and extension compression calls that report
-failure raise `CompressionException`.
+Implement `BrotliCompressorInterface::compress()` to return a raw Brotli stream,
+without a WOFF2 header, length prefix, or padding.
+
+An optional `BrotliStreamCompressorInterface::compressStream()` implementation
+reads from the current input position to EOF, writes at the current output
+position, leaves both resources open, and does not rewind them.
+
+## Check the runtime
+
+Reading WOFF2 detects the PHP Brotli extension or the `brotli` executable.
+Writing needs an explicit compressor passed to `Woff2Writer`, even when Brotli
+is installed. Check the PHP runtime executing your script: a web worker may
+have different extensions and an executable `PATH` unlike your terminal.
+
+The process adapter needs `proc_open()` and writable temporary storage. Configure
+an explicit executable path when it is unavailable through the worker's `PATH`.

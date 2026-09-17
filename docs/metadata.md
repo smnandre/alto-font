@@ -1,76 +1,68 @@
-# Font metadata
+# Read font metadata
 
-ALTO Font exposes three related views of a loaded face. Choose the smallest
-one that answers the current question.
+Read the family, style, version, and license fields stored in a font. These
+values can populate an asset list or help you identify a file before conversion.
 
-## Face metrics
+## Print the name and license fields
 
-`FontFace` contains structural values used to interpret glyph geometry:
+Place a font at `fonts/Inter-Regular.ttf` and run this script beside `vendor`:
 
 ```php
-$face = $font->face();
+<?php
 
-$face->unitsPerEm;
-$face->ascender;
-$face->descender;
-$face->glyphCount;
-$face->tables;
+require __DIR__.'/vendor/autoload.php';
+
+use Alto\Font\Font;
+
+$font = Font::fromFile(__DIR__.'/fonts/Inter-Regular.ttf');
+$metadata = $font->metadata();
+
+printf("Family: %s\nStyle: %s\n", $metadata->family, $metadata->subfamily);
+printf("Version: %s\n", $metadata->version ?? 'not provided');
+printf("License: %s\n", $metadata->license ?? 'not provided');
+printf("License URL: %s\n", $metadata->licenseUrl ?? 'not provided');
 ```
 
-`tables` contains table tags such as `cmap` and `name`. It does not expose raw
-table bytes or provide a public arbitrary-table parser.
+This prints the file's own values. Optional fields return `null` when absent;
+the example displays `not provided` instead. The license fields describe the
+font; consult the license supplied by its publisher for its terms.
 
-Metrics and outlines use design units. For a target size of 16 pixels, a value
-can be scaled with `16 / $face->unitsPerEm`.
+Other optional fields include full and PostScript names, copyright,
+manufacturer, designer, designer URL, vendor URL, and description.
+`$metadata->format` identifies the loaded file container.
 
-For collections, `faceIndex` identifies the selected face and `faceCount`
-reports the number of faces in the file.
+## Read weight and style for matching
 
-## Matching descriptors
-
-`descriptor()` returns the naming and CSS-like characteristics used by
-font discovery:
+Continue the script with:
 
 ```php
 $descriptor = $font->descriptor();
 
-echo $descriptor->family;
-echo $descriptor->subfamily;
-echo $descriptor->weight->css();
-echo $descriptor->style->value;
-echo $descriptor->stretch->css();
+printf(
+    "Weight: %s, style: %s, stretch: %s\n",
+    $descriptor->weight->css(),
+    $descriptor->style->value,
+    $descriptor->stretch->css(),
+);
 ```
 
-Weight, style, and stretch are inferred from the font's subfamily names. They
-are useful for selection but do not replace a full CSS font-matching engine.
+For a regular face, values typically describe weight 400, normal style, and
+100% stretch. They are inferred from subfamily names and are used by
+[font discovery](discovery.md); they do not implement the full CSS matching rules.
 
-## Descriptive metadata
+## Read dimensions and glyph counts
 
-`metadata()` includes the descriptor and optional fields from the OpenType
-`name` table:
+`$font->face()` exposes `unitsPerEm`, `ascender`, `descender`, and `glyphCount`.
+Dimensions use font design units. To convert a value to a target size of 16
+pixels, multiply it by `16 / $font->face()->unitsPerEm`.
 
-```php
-$metadata = $font->metadata();
+For collections, `faceIndex` identifies the selected face and `faceCount`
+reports the number of faces. `tables` lists OpenType table tags; it does not
+expose raw table bytes. See [Glyphs](glyphs.md) for individual measurements.
 
-echo $metadata->family;
-echo $metadata->format->value;
-echo $metadata->version;
-echo $metadata->license;
-echo $metadata->licenseUrl;
-```
+## Names and languages
 
-Available optional fields include full and PostScript names, copyright,
-manufacturer, designer and vendor details, description, version, and license
-information. A missing name-table record is returned as `null`; ALTO Font does
-not invent a replacement value.
-
-Name selection is not locale-aware. ALTO Font currently keeps the first
-decodable record for each field instead of selecting by language. Non-ASCII
-legacy Mac Roman names may not be transcoded correctly. Applications that need
-localized names should treat this metadata as a best available value.
-
-`format` identifies the loaded container signature. It does not describe every
-outline or color technology stored inside that container.
-
-The license fields describe the font. They do not grant rights beyond the
-license supplied by its publisher.
+Name selection keeps the first decodable record for each field rather than
+selecting by language. Non-ASCII legacy Mac Roman names may not be transcoded
+correctly. Applications needing localized names should treat these fields as
+best available values.

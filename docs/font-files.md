@@ -1,4 +1,4 @@
-# Font files
+# Loading font files
 
 Start with the location of the font. Load a known path directly, or ask
 `FontFinder` to select the closest file for a family and style request.
@@ -39,5 +39,16 @@ fonts, and custom locators.
 
 ## Read the loaded face
 
-Once a file or collection face is loaded, use [Font data](font-data.md) to read
-its names, structure, glyphs, and variation axes.
+Once a file or collection face is loaded, continue with [Metadata](metadata.md),
+[Glyph metrics](glyphs.md), or [Variable fonts](variations.md). Use the
+[Font API reference](font-data.md) to look up an exact signature or return type.
+
+## When a font will not load
+
+Check the path and read permissions, then the [supported formats](formats.md).
+An `.otf` extension does not identify its outlines: CFF/CFF2 outlines and WOFF2
+collections are unsupported. Renaming a file does not make it compatible.
+
+`InvalidFontException` indicates malformed data or an invalid collection face
+index. `UnsupportedFontException` indicates an unsupported feature. Select an
+existing face or use a supported source font, according to the exception.

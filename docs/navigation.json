@@ -1,0 +1,14 @@
+{
+    "parents": {
+        "conversion/writers": "conversion",
+        "compression": "conversion",
+        "compression/woff2": "compression",
+        "subsetting/unicode-sets": "subsetting",
+        "subsetting/policies": "subsetting",
+        "formats": "reference",
+        "font-data": "reference",
+        "reference/subsetting": "reference",
+        "reference/opentype-subsetting": "reference",
+        "reference/documentation-figures": "reference"
+    }
+}

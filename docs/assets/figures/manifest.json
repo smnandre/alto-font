@@ -1,0 +1,34 @@
+{
+    "sources": {
+        "Inter-Regular-latin.woff2": "8909904ab6c872eb994093482a88a28eca2cd95912d7b6fecd72103b0dc07edc",
+        "AltoCorpusVariable.ttf": "79c9790a51e9ad290847f5fc2f01b641642bec489bfd4582f1005cbbd285e59e"
+    },
+    "runtime": {
+        "php": "8.5.10",
+        "zlib": "1.2.12",
+        "brotli": "0.21.0"
+    },
+    "text": "ALTO Font 0123456789",
+    "source_glyphs": 518,
+    "glyph_A": {
+        "advance": 1413,
+        "left_side_bearing": 52,
+        "units_per_em": 2048
+    },
+    "conversion_bytes": {
+        "ttf": 66912,
+        "woff": 31792,
+        "woff2": 23300
+    },
+    "subset_woff_bytes": {
+        "preserve": 19784,
+        "compact": 8308,
+        "compact_without_hinting": 8280
+    },
+    "retained_glyphs": 104,
+    "variable_A_advances": {
+        "300": 650,
+        "600": 650,
+        "900": 650
+    }
+}

@@ -1,83 +1,96 @@
-# Font discovery
+# Find a font
 
-`FontFinder` searches font files and selects the closest face for a family,
-weight, style, and stretch query.
+Search a directory when you know the family and style you want but not its
+filename. `FontFinder` returns the closest matching face within that family.
 
-## Search application directories
+## Find a family in your application
+
+Put your font files in `fonts`, then run this script beside `vendor`:
 
 ```php
+<?php
+
+require __DIR__.'/vendor/autoload.php';
+
 use Alto\Font\FontFinder;
 
-$finder = FontFinder::fromDirectories(
-    __DIR__.'/fonts',
-    __DIR__.'/vendor-fonts',
-);
+$finder = FontFinder::fromDirectories(__DIR__.'/fonts');
+$font = $finder->find('Inter');
 
-$font = $finder->get('Inter');
-```
-
-Directories are searched recursively. Invalid and unsupported files are
-ignored while candidates are inspected.
-
-Inspect `diagnostics()` when skipped candidates should be reported or logged:
-
-```php
-foreach ($finder->diagnostics() as $path => $exception) {
-    // $path could not be loaded; $exception explains why.
+if (null === $font) {
+    echo "Inter was not found in fonts.\n";
+} else {
+    printf("Found %s %s\n", $font->metadata()->family, $font->metadata()->subfamily);
 }
 ```
 
-Use the method matching the absence policy of your application:
+With Inter Regular present, this prints `Found Inter Regular`. Otherwise the
+script reports that the family is absent. The family name comes from the
+font's metadata, not its filename.
+
+Directories are searched recursively. Pass several paths to
+`fromDirectories()` to search multiple application directories.
+
+## Request a weight and style
+
+Continue the script with:
 
 ```php
-$finder->has('Inter');  // bool
-$finder->find('Inter'); // Font|null
-$finder->get('Inter');  // Font or FontNotFoundException
-```
-
-## Select a face
-
-Build an immutable query for more control:
-
-```php
-use Alto\Font\Descriptor\FontStretch;
 use Alto\Font\FontQuery;
 
-$query = FontQuery::family('Inter')
-    ->weight(700)
-    ->italic()
-    ->stretch(new FontStretch(100));
+$font = $finder->find(FontQuery::family('Inter')->weight(700)->italic());
 
-$font = $finder->get($query);
+if (null !== $font) {
+    printf("Selected %s %s\n", $font->descriptor()->family, $font->descriptor()->subfamily);
+}
 ```
 
-The finder prefers exact static faces. A variable font can satisfy `wght` and
-`wdth` requests when it exposes those axes; the returned `Font` already
-contains the selected coordinates.
+The result is the closest match, so check its descriptor if you require an
+exact style. The finder prefers exact static faces. A variable font can satisfy
+weight or width requests through its axes.
 
-For simple calls, weight and style can be passed directly:
+**A variable result with selected coordinates cannot be written or subsetted.**
+Use `withoutVariations()` to work with its original variable source; that
+retains all axes rather than exporting only the requested weight. See
+[Variable fonts](variations.md).
+
+For more query options, use `stretch(new FontStretch(100))`, or pass weight and
+style directly to `get()` or `find()` with `FontStyle` values.
+
+## Choose how absence is handled
+
+| Method | Result |
+| --- | --- |
+| `has('Inter')` | A boolean |
+| `find('Inter')` | A `Font`, or `null` when no family matches |
+| `get('Inter')` | A `Font`, or `FontNotFoundException` |
+
+Invalid and unsupported candidate files are skipped. Inspect the failures
+after searching if an expected font was not found:
 
 ```php
-use Alto\Font\Descriptor\FontStyle;
-
-$font = $finder->get('Inter', weight: 700, style: FontStyle::Italic);
+foreach ($finder->diagnostics() as $path => $exception) {
+    printf("Skipped %s: %s\n", $path, $exception->getMessage());
+}
 ```
 
 ## Search system fonts
 
 ```php
-$finder = FontFinder::system();
-$font = $finder->find('Helvetica');
+use Alto\Font\FontFinder;
+
+$font = FontFinder::system()->find('Helvetica');
+
+echo null === $font ? "Helvetica is unavailable.\n" : "Helvetica is available.\n";
 ```
 
-System availability differs between machines. Do not rely on a system font in
-portable tests or deterministic builds; provide a controlled font directory
-instead.
+Results depend on the machine. Use a controlled font directory for portable
+tests and repeatable builds.
 
-## Provide another source
+## Provide paths from another source
 
-Implement `FontLocatorInterface` when paths come from an application index or
-another non-directory source:
+Implement `FontLocatorInterface` when your application already has a list of
+local font paths:
 
 ```php
 use Alto\Font\FontFinder;
@@ -94,10 +107,7 @@ $locator = new class implements FontLocatorInterface {
 $finder = FontFinder::fromLocator($locator);
 ```
 
-The locator yields local file paths. Loading and candidate caching remain the
-finder's responsibility.
-
-`FontFinder` evaluates the first face of a TTC or OTC candidate. Load a
-different collection face explicitly with `Font::fromFile($path, faceIndex: 1)`.
-The finder selects the best match; it is not a public font-catalog enumeration
-API.
+The finder loads and caches candidates. It searches the first face of each
+TTC/OTC file; load another face explicitly with
+`Font::fromFile($path, faceIndex: 1)`.
+The finder selects a match rather than exposing a public catalog of every file.
