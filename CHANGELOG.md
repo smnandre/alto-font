@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Convert glyph names to UTF-8 with `GlyphName::toUnicode()`, using the complete
+  Adobe Glyph List, Unicode-name rules, and optional Zapf Dingbats mappings.
+
 - Reserve `Font::metrics()` for font-wide metrics. Migrate development calls
   from `metrics($glyph)` to `glyphMetrics($glyph)`; the latter now accepts a
   glyph ID or one UTF-8 character. The released `getMetrics($glyph)` and

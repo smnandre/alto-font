@@ -24,6 +24,7 @@ A font containing the capital letter A prints `A is available`.
 - [Fonts](fonts.md): understand files, faces, families, characters, and glyphs.
 - [Inspect](inspect.md): read files, metadata, glyphs, and variable-font data.
 - [Font metrics](font-metrics.md): load bytes and inspect font-wide bounds and embedding metadata.
+- [Glyph names](inspect/glyph-names.md): derive Unicode text from Adobe and Unicode-style names.
 - [Convert](convert.md): write TTF, WOFF, and WOFF2 output.
 - [Subset](subset.md): keep selected characters and control the resulting font.
 - [Formats](formats.md): check supported containers, outlines, and runtime requirements.
